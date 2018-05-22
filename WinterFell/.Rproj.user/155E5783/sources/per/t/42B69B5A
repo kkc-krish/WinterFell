@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1527031589802.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "2087687877",
+    "id" : "42B69B5A",
+    "lastKnownWriteTime" : 1527031603,
+    "last_content_update" : 1527031603322,
+    "path" : "~/Google Drive/RProjects/WinterFell/R/EarningsEstimate.R",
+    "project_path" : "R/EarningsEstimate.R",
+    "properties" : {
+        "cursorPosition" : "5,0",
+        "scrollLine" : "0",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 6,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

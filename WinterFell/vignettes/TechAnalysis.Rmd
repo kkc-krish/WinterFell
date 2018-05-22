@@ -1,0 +1,53 @@
+---
+title: "TechAnalysis"
+author: "Nirav Shah"
+date: "5/11/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE, warning=F, message=F,eval=T}
+library(tidyquant)
+library(TTR)
+library(quantmod)
+options("getSymbols.warning4.0"=FALSE)
+symbols <- c('WMT', "BBY", "JWN", "HD", "COST","ROST", "TGT","HTHT"  )
+
+priceData = lapply(symbols, function(x) getSymbols(Symbols = x,auto.assign = F)[,6])
+monthRet  =  sapply(priceData,function(x)tail(round(monthlyReturn(x)*100,2),1))
+weeklyRet =  sapply(priceData,function(x)tail(round(weeklyReturn(x)*100,2),1))
+dailyRet  =  sapply(priceData,function(x)tail(round(dailyReturn(x)*100,2),1))
+returnData = cbind.data.frame(symbols, monthRet, weeklyRet, dailyRet)
+
+
+closingPrice = sapply(priceData, function(x)tail(x,1))
+ma50 = sapply(priceData, function(x)tail(SMA(x, n = 50),1))
+ma200 = sapply(priceData, function(x)tail(SMA(x, n = 200),1))
+rsi = sapply(priceData, function(x)tail(RSI(x, n =14),1))
+
+
+```
+# Symbols
+```{r}
+symbols
+```
+
+## Returns Summary
+```{r}
+returnData
+```
+
+```{r, include=F, eval=T}
+rsiRange = c(0, 30, 50, 70, 100)
+rsiMeaning= c('OverSold','NearingOversold', 'NearingOverbought','Overbought')
+rsiD = rsiMeaning[findInterval(rsi, rsiRange)]
+
+rsi
+```
+
+# Technical Indicators 
+```{r}
+techInd = cbind.data.frame(symbols , closingPrice, ma50, ma200, RSI)
+techInd
+```
+
+

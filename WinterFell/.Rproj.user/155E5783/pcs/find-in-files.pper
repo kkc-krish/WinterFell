@@ -1,0 +1,10 @@
+{
+    "dialog-state" : {
+        "caseSensitive" : false,
+        "filePatterns" : [
+        ],
+        "path" : "~/Google Drive/RProjects/WinterFell",
+        "query" : "L2",
+        "regex" : false
+    }
+}

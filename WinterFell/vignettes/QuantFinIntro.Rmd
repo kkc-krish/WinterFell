@@ -1,0 +1,34 @@
+---
+title: "Quant Finance Intro"
+author: "Nirav Shah"
+date: "12/8/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+library(zoo)
+library(quantmod)
+library(PerformanceAnalytics)
+library(dplyr)
+library(data.table)
+library(forecast)
+```
+
+```{r Intro}
+getSymbols(Symbols = 'AAPL')
+aapl = as.zoo(x = AAPL)
+
+## subsetting  a zoo object with window option. Possibly reads the row  names for subsetting 
+window(x = aapl,start = '2013-01-01', end = '2013-12-31')
+
+# workds on xts objects.. possibly all time series items , this function would work 
+window(x = AAPL,start = '2013-01-01', end = '2013-12-31')
+```
+
+Box Jenkins
+```{r TSModelling}
+
+head(as.yearmon(aapl))
+```
+

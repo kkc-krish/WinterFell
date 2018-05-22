@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1526928365271.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1350259626",
+    "id" : "CD9161D0",
+    "lastKnownWriteTime" : 1527030939,
+    "last_content_update" : 1527030939309,
+    "path" : "~/Google Drive/RProjects/WinterFell/R/TechnicalAnalysis.Rmd",
+    "project_path" : "R/TechnicalAnalysis.Rmd",
+    "properties" : {
+        "cursorPosition" : "312,27",
+        "scrollLine" : "290"
+    },
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}

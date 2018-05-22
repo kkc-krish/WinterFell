@@ -1,0 +1,318 @@
+---
+title: "Technical Analysis of Stocks & Trends"
+author: ""
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    social: menu
+    theme: cerulean
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+source('Utilities.R')
+library(flexdashboard)
+library(tidyquant)
+library(TTR)
+library(quantmod)
+library(data.table)
+library(dygraphs)
+library(plotly)
+library(shiny)
+## signals to use 
+## SMA  (10, 50, 100, 200 averages along with the slope)
+## Bollinger Bands
+## UP Down Ratio 
+```
+
+```{r}
+
+# constituents = c('RUSSELL1000', 'RUSSELL2000', 'RUSSELL3000', 'DOW', 'SP500')
+# allindex = lapply(constituents, tq_index)
+# 
+# allIndex = data.table(rbindlist(allindex))
+# allIndex$symbol  = as.character(allIndex$symbol)
+# indexConstituents = allIndex[!duplicated(allIndex[,symbol, company])]
+# saveRDS(indexConstituents, 'indexConstituents.rds')
+indexConstituents = readRDS('indexConstituents.rds')
+tickr = sort(indexConstituents$symbol, decreasing = T)
+```
+
+
+
+```{r, include=F, eval= T}
+
+priceInput <- reactive({
+  
+  if(is.null(input$Symbol)){
+    symb = 'AAPL'
+  } else {
+    symb = input$Symbol
+  }
+  priceData = getSymbols(symb,
+                         auto.assign = F)
+  names(priceData) = c('Open' ,"High","Low","Close","Volume","Adjusted")
+  priceData <- priceData[complete.cases(priceData),]
+  
+})
+
+dataInput <- reactive({
+  
+  priceHist = priceInput()
+  closePrice = priceHist[,6]
+  volume = priceHist[,5]
+  
+  dr = round(dailyReturn(closePrice)*100,2)
+  
+  monthRet  =  as.numeric(tail(round(monthlyReturn(closePrice)*100,2),1))
+  weeklyRet = as.numeric( tail(round(weeklyReturn(closePrice)*100,2),1))
+  dailyRet  = as.numeric( tail(dr,1))
+  closingPrice = as.numeric(round(tail(closePrice,1),2))
+  
+  ## Technical Analysis 
+  ma50 = as.numeric(round(tail(SMA(closePrice, n = 50),1),2))
+  ma200 = as.numeric(round(tail(SMA(closePrice, n = 200),1)))
+  
+  ##updownind
+  priceHist$posnegCount = ifelse(dr > 0 , 1, -1)
+  temp = data.frame(tail(priceHist, 30))
+  temp = temp %>% group_by(posnegCount) %>% 
+    summarise(TotalVol = sum(Volume, na.rm = T)) %>% arrange(TotalVol)
+  upDownRatio = temp$TotalVol[1] / temp$TotalVol[2]
+  
+  ## RSI 
+  RSI =  round(as.numeric(tail(TTR::RSI(price = closePrice,n = 14),1)),2)
+  sd_10_30 = tail(TTR::runSD(closePrice, 10),1)/tail(TTR::runSD(closePrice, 30),1)
+  vol_10_30 = mean(tail(volume, 10))/mean(tail(volume, 30))
+  
+  
+  techlist = list(monthRet = monthRet,
+                  weeklyRet= weeklyRet,
+                  dailyRet= dailyRet,
+                  closingPrice = closingPrice,
+                  ma50 = ma50,
+                  ma200 = ma200,
+                  upDownVolRatio_30D = upDownRatio,
+                  rsi = RSI,
+                  DailyRet = dr,
+                  SD_10_30 = sd_10_30,
+                  vol_10_30 = vol_10_30)
+  
+  techlist
+})
+
+```
+
+Return History
+=======================================================================
+
+Column {.sidebar}
+-----------------------------------------------------------------------
+
+```{r}
+selectInput("Symbol", label = "Symbol",
+            choices = tickr)
+```
+This dashboard contains list of stocks in  R3000 + DOW + SP500.
+It is designed for traders to get insights about key technical indicators and assist them in trading. 
+It can also help investors find an entry point for stocks to open their positions for investments.
+
+
+
+Column
+-----------------------------------------------------------------------
+
+### Info Table
+```{r}
+DT::renderDataTable(iris)
+```
+
+
+
+Column
+-----------------------------------------------------------------------
+
+### ChartSeries
+
+```{r}
+renderDygraph({
+  dygraph(priceInput()[,c('Adjusted','Volume')]) %>%
+    dySeries('Volume', color ='red', stepPlot = T, fillGraph = T) %>%
+    dySeries('Adjusted', color ='blue',axis = 'y2', drawPoints = T, strokeWidth = 1.5, label = 'AdjustedClose') %>%
+    dyRangeSelector(dateWindow = c("2018-01-01", as.character(Sys.Date())))
+  
+  
+})
+
+# renderPlotly({
+#   ChartSeriesPlotly(Date = index(priceInput()),
+#                     series1 = priceInput()[,5], 
+#                     series2 = priceInput()[,6])
+# })
+```
+
+
+
+Technicals
+=======================================================================
+
+Column {.sidebar}
+-----------------------------------------------------------------------
+
+```{r}
+selectInput("Symbol", label = "Symbol",
+            choices = tickr)
+```
+__Note__
+
+* If the __closing price > moving averages__, the boxes will be green , otherwise red. 
+* If the updown vol ratio is __above 1__, the boxes will be green , otherwise red.
+
+Row
+-----------------------------------------------------------------------
+
+### 1 day Return {.value-box}
+
+```{r}
+renderValueBox({
+  techData = dataInput()
+  rate <- formatC(techData$dailyRet, digits = 3, format = "f")
+  boxCol = ifelse(rate < 0, "danger" , "success")
+  valueBox(
+    value = paste(rate," %"),
+    icon = "fa-area-chart",
+    color = boxCol
+  )
+})
+```
+
+### Weekly Return {.value-box}
+
+```{r}
+renderValueBox({
+  techData = dataInput()
+  rate <- formatC(techData$weeklyRet, digits = 3, format = "f")
+  boxCol = ifelse(rate < 0, "danger" , "success")
+  valueBox(
+    value = paste(rate," %"),
+    icon = "fa-area-chart",
+    color = boxCol
+  )
+})
+```
+
+### Monthly Return {.value-box}
+
+```{r}
+renderValueBox({
+  techData = dataInput()
+  rate <- formatC(techData$monthRet, digits = 3, format = "f")
+  boxCol = ifelse(rate < 0, "danger" , "success")
+  valueBox(
+    value = paste(rate," %"),
+    icon = "fa-area-chart",
+    color = boxCol
+  )
+})
+```
+
+
+Row 
+-----------------------------------------------------------------------
+
+### RSI Indicator
+
+```{r}
+
+renderValueBox({
+  techData = dataInput()
+  rate = techData$rsi
+  rate <- formatC(rate, digits = 2, format = "f")
+  valueBox(
+    value = rate,
+    icon = "fa-area-chart",
+    color = ifelse(rate > 70 ,"danger", "success")
+  )
+})
+```
+
+### 50 Day SMA
+
+```{r}
+renderValueBox({
+  techData = dataInput()
+  rate = techData$ma50
+  rate <- formatC(rate, digits = 2, format = "f")
+  valueBox(
+    value = rate,
+    icon = "fa-area-chart",
+    color = ifelse(rate >techData$closingPrice ,"danger", "success")
+  )
+})
+```
+
+### 200 Day SMA
+
+```{r}
+renderValueBox({
+  techData = dataInput()
+  rate = techData$ma200
+  rate <- formatC(rate, digits = 2, format = "f")
+  valueBox(
+    value = rate,
+    icon = "fa-area-chart",
+    color = ifelse(rate >techData$closingPrice ,"danger", "success")
+  )
+})
+```
+
+
+
+Row 
+-----------------------------------------------------------------------
+### 30 day UpDwn Vol
+
+```{r}
+renderValueBox({
+  techData = dataInput()
+  rate = techData$upDownVolRatio_30D
+  rate <- formatC(rate, digits = 2, format = "f")
+  valueBox(
+    value = rate,
+    icon = "fa-area-chart",
+    color = ifelse(rate > 1 ,"success", "danger")
+  )
+})
+```
+
+### SD of 10D/30D
+
+```{r}
+renderValueBox({
+  techData = dataInput()
+  rate = techData$SD_10_30
+  rate <- formatC(rate, digits = 2, format = "f")
+  valueBox(
+    value = rate,
+    icon = "fa-area-chart",
+    color = ifelse(rate > 1 ,"success", "danger")
+  )
+})
+```
+
+### Avg Vol 10D/30D 
+
+```{r}
+
+renderValueBox({
+  techData = dataInput()
+  rate = techData$vol_10_30
+  rate <- formatC(rate, digits = 2, format = "f")
+  valueBox(
+    value = rate,
+    icon = "fa-area-chart",
+    color = ifelse(rate > 1 ,"success", "danger")
+  )
+})
+```
+

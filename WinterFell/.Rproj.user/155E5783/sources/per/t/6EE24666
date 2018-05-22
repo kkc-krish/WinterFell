@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1526998414717.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "4166775",
+    "id" : "6EE24666",
+    "lastKnownWriteTime" : 1527021499,
+    "last_content_update" : 1527021499774,
+    "path" : "~/Google Drive/RProjects/WinterFell/R/updownvisualization.R",
+    "project_path" : "R/updownvisualization.R",
+    "properties" : {
+        "cursorPosition" : "18,0",
+        "scrollLine" : "0",
+        "tempName" : "Untitled2"
+    },
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

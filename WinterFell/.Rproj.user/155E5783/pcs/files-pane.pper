@@ -1,0 +1,13 @@
+{
+    "path" : "~/Google Drive/RProjects/WinterFell",
+    "sortOrder" : [
+        {
+            "ascending" : false,
+            "columnIndex" : 3
+        },
+        {
+            "ascending" : true,
+            "columnIndex" : 2
+        }
+    ]
+}
