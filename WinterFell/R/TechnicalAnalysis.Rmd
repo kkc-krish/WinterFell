@@ -125,7 +125,7 @@ __Note__
 
 
 
-Return History
+Summary
 =======================================================================
 
 Column
@@ -139,7 +139,8 @@ renderTable({
                  select( - weight,- shares_held))[1,]
   stockInfo = cbind.data.frame(stockInfo,
                                High_52_Week = paste0("$",dataInput()$high_52week),
-                               High_52_Week = paste0("$",dataInput()$low_52week))
+                               High_52_Week = paste0("$",dataInput()$low_52week),
+                               Closing_price = paste0("$",dataInput()$closingPrice))
   
   stockInfo =  as.data.frame( t(stockInfo))
   colnames(stockInfo) = 'Value'
@@ -147,7 +148,8 @@ renderTable({
                       "Company",
                       "Sector",
                       "52 Week High",
-                      "52 Week Low")
+                      "52 Week Low",
+                      "Closing Price")
   
   stockInfo[,c('Info','Value')]
   
