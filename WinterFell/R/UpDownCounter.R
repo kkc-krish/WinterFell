@@ -1,5 +1,6 @@
 library(quantmod)
 library(xts)
+library(data.table)
 df = getSymbols('^DJI', auto.assign = F)[,6]
 dfR = dailyReturn(df)
 dailyR = ifelse(dfR >0 , "Up", "Down")
@@ -41,9 +42,4 @@ UpDown <- function(retSeries = NULL)
   }
   return(list(UpCounter = totalPosCounter, DownCounter = totalNegCounter))
 }
-
-months = month(as.Date(rownames(as.data.frame(dfR))))
-DT = data.table(dfR, months)
-tt = DT[, .(upD = sapply(UpDown(daily.returns), mean)), by = months]
-
 
