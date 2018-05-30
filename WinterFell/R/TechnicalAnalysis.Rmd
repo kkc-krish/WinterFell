@@ -1,5 +1,5 @@
 ---
-title: "Technical Indicators"
+title: "Technical Analysis"
 author: ""
 output: 
   flexdashboard::flex_dashboard:
@@ -14,6 +14,7 @@ source('Utilities.R')
 source("ReturnIndicators.R")
 source("VolumeIndicators.R")
 source("VolatilityIndicators.R")
+
 library(flexdashboard)
 library(tidyquant)
 library(TTR)
@@ -22,7 +23,10 @@ library(data.table)
 library(dygraphs)
 library(plotly)
 library(shiny)
+library(xts)
+library(zoo)
 ```
+
 
 ```{r}
 
@@ -70,13 +74,14 @@ dataInput <- reactive({
   low_52week = min(tail(closePrice, 252))
   
   ## Moving Averages
-  ma10 = GetMovingAverages(price = closePrice, n = 10, periods = 1)
-  ma50  = GetMovingAverages(price = closePrice, n = 50, periods = 1)
-  ma200 = GetMovingAverages(price = closePrice, n = 200, periods = 1)
+  ma10 = GetMovingAverages(price = closePrice, n = 10)
+  ma50  = GetMovingAverages(price = closePrice, n = 50)
+  ma200 = GetMovingAverages(price = closePrice, n = 200)
   
   ##Volume Indicators
   upDownRatio = UpDownVolRatio(retSeries = dr, volume = volume,periods = 30)
-  vol_10_30 = GetVolRatios(volume = volume, n1 = 10, n2= 30)
+  vol_10_30 = rollapply(volume, width = 30, function(x)GetVolRatios(volume = x, n1 = 10, n2= 30))
+  vol_05_10 = rollapply(volume, width = 30, function(x)GetVolRatios(volume = x, n1 = 5, n2= 10))
   
   # Trend Indicators
   
@@ -98,6 +103,7 @@ dataInput <- reactive({
                   rsi = RSI,
                   SD_10_30 = sd_10_30,
                   vol_10_30 = vol_10_30,
+                  vol_05_10=vol_05_10,
                   high_52week = high_52week,
                   low_52week = low_52week,
                   atr_10_30 = atr_10_30)
@@ -158,13 +164,14 @@ renderTable({
 
 
 
-Column
+Column {data-height=850}
 -----------------------------------------------------------------------
 
-### ChartSeries {data-height=900}
-
+### Price Chart
 ```{r}
 renderDygraph({
+  
+  
   dygraph(priceInput()[,c('Adjusted','Volume')]) %>%
     dySeries('Volume', color ='red', stepPlot = T, fillGraph = T) %>%
     dySeries('Adjusted', color ='blue',axis = 'y2', drawPoints = T, strokeWidth = 1.5, label = 'AdjustedClose') %>%
@@ -173,16 +180,10 @@ renderDygraph({
   
 })
 
-# renderPlotly({
-#   ChartSeriesPlotly(Date = index(priceInput()),
-#                     series1 = priceInput()[,5], 
-#                     series2 = priceInput()[,6])
-# })
 ```
 
 
-
-Technicals
+Moving Averages
 =======================================================================
 
 Row
@@ -242,7 +243,7 @@ Row
 ```{r}
 renderValueBox({
   techData = dataInput()
-  rate = techData$ma10
+  rate = FetchMostRecentVal(techData$ma10)
   rate <- formatC(rate, digits = 2, format = "f")
   valueBox(
     value = rate,
@@ -258,7 +259,7 @@ renderValueBox({
 ```{r}
 renderValueBox({
   techData = dataInput()
-  rate = techData$ma50
+  rate = FetchMostRecentVal(techData$ma50)
   rate <- formatC(rate, digits = 2, format = "f")
   valueBox(
     value = rate,
@@ -274,7 +275,7 @@ renderValueBox({
 ```{r}
 renderValueBox({
   techData = dataInput()
-  rate = techData$ma200
+  rate = FetchMostRecentVal(techData$ma200)
   rate <- formatC(rate, digits = 2, format = "f")
   valueBox(
     value = rate,
@@ -285,10 +286,75 @@ renderValueBox({
 })
 ```
 
+Column
+-----------------------------------------------------------------------
+### Moving Averages Chart
+```{r}
+renderDygraph({
+  myData = merge.xts(Adjusted = priceInput()$Adjusted,
+                     ma10 = dataInput()$ma10,
+                     ma50 = dataInput()$ma50,
+                     ma200 = dataInput()$ma200) 
+  dygraph(myData) %>%
+    dySeries('Adjusted', color ='blue', strokeWidth = 1.5, fillGraph = T) %>%
+    dySeries('ma10', color ='red',strokeWidth = 1.2) %>%
+    dySeries('ma50', color ='green', strokeWidth = 1.2) %>%
+    dySeries('ma200', color ='black', strokeWidth = 1.2) %>%
+    dyRangeSelector(dateWindow = c("2018-01-01", as.character(Sys.Date())))
+  
+  
+})
 
+# renderPlotly({
+#   ChartSeriesPlotly(Date = index(priceInput()),
+#                     series1 = priceInput()[,5], 
+#                     series2 = priceInput()[,6])
+# })
+```
+
+
+
+Volume Indicators
+=======================================================================
 
 Row 
 -----------------------------------------------------------------------
+### Avg Vol 5D/10D 
+
+```{r}
+
+renderValueBox({
+  techData = dataInput()
+  rate = FetchMostRecentVal(techData$vol_05_10)
+  rate <- formatC(rate, digits = 2, format = "f")
+  valueBox(
+    value = rate,
+    icon = ifelse(rate > 1 ,
+                  "glyphicon glyphicon-arrow-up", "glyphicon glyphicon-arrow-down" ),
+    color = ifelse(rate > 1 ,"success", "danger")
+  )
+})
+```
+
+
+### Avg Vol 10D/30D 
+
+```{r}
+
+renderValueBox({
+  techData = dataInput()
+  rate = FetchMostRecentVal(techData$vol_10_30)
+  rate <- formatC(rate, digits = 2, format = "f")
+  valueBox(
+    value = rate,
+    icon = ifelse(rate > 1 ,
+                  "glyphicon glyphicon-arrow-up", "glyphicon glyphicon-arrow-down" ),
+    color = ifelse(rate > 1 ,"success", "danger")
+  )
+})
+```
+
+
 ### 30 day UpDwn Vol
 
 ```{r}
@@ -305,38 +371,35 @@ renderValueBox({
 })
 ```
 
-### SD of 10D/30D
-
+Column
+-----------------------------------------------------------------------
+### Volume Averages Chart
 ```{r}
-renderValueBox({
-  techData = dataInput()
-  rate = techData$SD_10_30
-  rate <- formatC(rate, digits = 2, format = "f")
-  valueBox(
-    value = rate,
-    icon = ifelse(rate > 1 ,
-                  "glyphicon glyphicon-arrow-up", "glyphicon glyphicon-arrow-down" ),
-    color = ifelse(rate > 1 ,"success", "danger")
-  )
+renderDygraph({
+  myData = merge.xts(Adjusted = priceInput()$Volume,
+                     Vol5_10 = dataInput()$vol_05_10,
+                     Vol10_30 = dataInput()$vol_10_30) 
+  names(myData) = c('Volume',"Vol_5D/10D","Vol_10D/30D")
+  dygraph(myData) %>%
+    dySeries('Volume', color ='blue', strokeWidth = 1.5, fillGraph = T) %>%
+    dySeries('Vol_5D/10D', color ='red',strokeWidth = 1.2,axis = 'y2') %>%
+    dySeries('Vol_10D/30D', color ='green', strokeWidth = 1.2,axis = 'y2') %>%
+    dyRangeSelector(dateWindow = c("2018-01-01", as.character(Sys.Date())))
+  
+  
 })
+
+# renderPlotly({
+#   ChartSeriesPlotly(Date = index(priceInput()),
+#                     series1 = priceInput()[,5], 
+#                     series2 = priceInput()[,6])
+# })
 ```
 
-### Avg Vol 10D/30D 
 
-```{r}
 
-renderValueBox({
-  techData = dataInput()
-  rate = techData$vol_10_30
-  rate <- formatC(rate, digits = 2, format = "f")
-  valueBox(
-    value = rate,
-    icon = ifelse(rate > 1 ,
-                  "glyphicon glyphicon-arrow-up", "glyphicon glyphicon-arrow-down" ),
-    color = ifelse(rate > 1 ,"success", "danger")
-  )
-})
-```
+Trend Indicators
+=======================================================================
 
 Row 
 -----------------------------------------------------------------------

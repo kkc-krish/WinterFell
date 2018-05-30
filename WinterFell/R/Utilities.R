@@ -33,6 +33,13 @@ GetSP500Tickers <- function()
 }
 
 
+## Fetch nth value from time series
+FetchMostRecentVal <- function(series = NULL, n = 1)
+{
+  val = as.numeric(tail(series, n))
+  return(val)
+}
+
 ## ChartSerie with Plotly
 ChartSeriesPlotly <- function(Date = index(tt), series1 = tt[,5], series2 = tt[,6])
 {
