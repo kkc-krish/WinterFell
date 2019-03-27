@@ -72,7 +72,7 @@ dataInput <- reactive({
   closingPrice = as.numeric(round(tail(closePrice,1),2))
   high_52week = max(tail(closePrice, 252))
   low_52week = min(tail(closePrice, 252))
-  
+  #startDate = as.Date()
   ## Moving Averages
   ma10 = GetMovingAverages(price = closePrice, n = 10)
   ma50  = GetMovingAverages(price = closePrice, n = 50)
@@ -117,17 +117,14 @@ Sidebar {.sidebar}
 =====================================
 
 ```{r}
-selectInput("Symbol", label = "Symbol",
-            choices = tickr, selected = 'TSLA')
+selectInput("Symbol", 
+            label = "Symbol",
+            choices = tickr, 
+            selected = 'TSLA')
 ```
 This dashboard contains list of stocks in  R3000 + DOW + SP500.
 It is designed for traders to get insights about key technical indicators and assist them in trading. 
 It can also help investors find an entry point for stocks to open their positions for investments.
-
-__Note__
-
-* If the __closing price > moving averages__, the boxes will be green , otherwise red. 
-* If the updown vol ratio is __above 1__, the boxes will be green , otherwise red.
 
 
 
@@ -183,9 +180,10 @@ renderDygraph({
 ```
 
 
+
+
 Moving Averages
 =======================================================================
-
 Row
 -----------------------------------------------------------------------
 
@@ -233,7 +231,6 @@ renderValueBox({
   )
 })
 ```
-
 
 Row 
 -----------------------------------------------------------------------
